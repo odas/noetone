@@ -1,0 +1,42 @@
+# TTS Books — Python dependencies
+# Python 3.11+ required (zoneinfo stdlib, match statements)
+# System dependencies (install separately):
+#   macOS:  brew install tesseract poppler
+#   Linux:  apt install tesseract-ocr poppler-utils
+
+# ── Web framework ─────────────────────────────────────────────
+flask>=3.0,<4.0
+
+# ── Environment variables ─────────────────────────────────────
+# Loads GEMINI_API_KEY from .env — required, SDK does not auto-read .env
+python-dotenv>=1.0
+
+# ── Google AI (OCR + TTS) ─────────────────────────────────────
+# NOTE: use google-genai, NOT google-generativeai
+# google-generativeai is deprecated as of August 2025 and end-of-life.
+google-genai>=1.0
+
+# ── TTS fallback ──────────────────────────────────────────────
+gtts>=2.5
+
+# ── OCR ───────────────────────────────────────────────────────
+# Tesseract Python wrapper (requires tesseract binary — see above)
+pytesseract>=0.3.10
+
+# ── PDF handling ──────────────────────────────────────────────
+# Text extraction from native PDFs
+pdfplumber>=0.11
+
+# Scanned PDF → image conversion (requires poppler binary — see above)
+pdf2image>=1.17
+
+# ── Image handling ────────────────────────────────────────────
+Pillow>=10.4
+
+# ── File watching ─────────────────────────────────────────────
+watchdog>=4.0
+
+# ── Timezone (zoneinfo backfill for Windows only) ─────────────
+# zoneinfo is stdlib on Python 3.9+ on macOS and Linux.
+# Uncomment below ONLY if running on Windows:
+# tzdata>=2024.1

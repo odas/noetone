@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Noëtone</title>
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400&family=DM+Mono:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0c0c0c;
+      --sidebar:   #111;
+      --surface:   #161616;
+      --border:    #242424;
+      --text:      #ddd5c4;
+      --text-dim:  #6b6560;
+      --text-mute: #333;
+      --gold:      #c9a96e;
+      --gold-dim:  #6b5535;
+      --danger:    #8b3a3a;
+      --font-body: 'Lora', Georgia, serif;
+      --font-ui:   'DM Mono', 'Courier New', monospace;
+    }
+
+    html, body { height: 100%; overflow: hidden; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-ui);
+      display: flex;
+      font-size: 13px;
+    }
+
+    /* ── Sidebar ──────────────────────────────────────────── */
+    #sidebar {
+      width: 240px;
+      min-width: 240px;
+      background: var(--sidebar);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    #sidebar-header {
+      padding: 24px 20px 16px;
+      border-bottom: 1px solid var(--border);
+      letter-spacing: 0.15em;
+      font-size: 10px;
+      color: var(--text-dim);
+      text-transform: uppercase;
+    }
+
+    #sidebar-header span {
+      color: var(--gold);
+      font-size: 16px;
+      display: block;
+      margin-bottom: 4px;
+      letter-spacing: 0;
+      font-weight: 400;
+      font-family: var(--font-body);
+      font-style: italic;
+    }
+
+    #book-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 0;
+    }
+
+    #book-list::-webkit-scrollbar { width: 3px; }
+    #book-list::-webkit-scrollbar-track { background: transparent; }
+    #book-list::-webkit-scrollbar-thumb { background: var(--border); }
+
+    .book-item {
+      padding: 10px 20px;
+      cursor: pointer;
+      border-left: 2px solid transparent;
+      transition: all 0.15s;
+      color: var(--text-dim);
+      line-height: 1.4;
+    }
+
+    .book-item:hover { color: var(--text); background: var(--surface); }
+
+    .book-item.active {
+      color: var(--gold);
+      border-left-color: var(--gold);
+      background: var(--surface);
+    }
+
+    .book-item .book-title {
+      font-size: 12px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .book-item .book-meta {
+      font-size: 10px;
+      color: var(--text-mute);
+      margin-top: 2px;
+    }
+
+    .book-item.active .book-meta { color: var(--gold-dim); }
+
+    .book-item .delete-btn {
+      float: right;
+      color: var(--text-mute);
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      line-height: 1;
+      padding: 0 0 0 6px;
+      visibility: hidden;
+    }
+
+    .book-item:hover .delete-btn { visibility: visible; }
+    .book-item .delete-btn:hover { color: var(--danger); }
+
+    #no-books {
+      padding: 20px;
+      color: var(--text-mute);
+      font-size: 11px;
+      line-height: 1.7;
+    }
+
+    /* ── Sidebar footer ───────────────────────────────────── */
+    #sidebar-footer {
+      border-top: 1px solid var(--border);
+      padding: 16px 20px;
+    }
+
+    .footer-label {
+      font-size: 9px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-mute);
+      margin-bottom: 8px;
+    }
+
+    .usage-row {
+      display: flex;
+      justify-content: space-between;
+      color: var(--text-mute);
+      font-size: 10px;
+      margin-bottom: 3px;
+    }
+
+    .usage-row .val { color: var(--text-dim); }
+    .usage-row .val.warn { color: var(--gold); }
+
+    /* ── Main ─────────────────────────────────────────────── */
+    #main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    #topbar {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      padding: 22px 40px 18px;
+      border-bottom: 1px solid var(--border);
+      min-height: 64px;
+    }
+
+    #book-title {
+      font-family: var(--font-body);
+      font-style: italic;
+      font-size: 18px;
+      color: var(--text);
+      font-weight: 400;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 70%;
+    }
+
+    #book-title.empty { color: var(--text-mute); font-size: 13px; font-family: var(--font-ui); font-style: normal; }
+
+    #page-counter {
+      font-size: 11px;
+      color: var(--text-dim);
+      letter-spacing: 0.08em;
+      white-space: nowrap;
+    }
+
+    /* ── Chapter marker ───────────────────────────────────── */
+    #chapter-bar {
+      padding: 6px 40px;
+      font-size: 10px;
+      color: var(--gold-dim);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--border);
+      min-height: 28px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    #chapter-bar input {
+      background: none;
+      border: none;
+      border-bottom: 1px solid var(--border);
+      color: var(--gold);
+      font-family: var(--font-ui);
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      width: 200px;
+      outline: none;
+      padding: 2px 0;
+    }
+
+    .chapter-action {
+      background: none;
+      border: none;
+      color: var(--text-mute);
+      cursor: pointer;
+      font-family: var(--font-ui);
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      padding: 0;
+    }
+    .chapter-action:hover { color: var(--gold); }
+
+    /* ── Text area ────────────────────────────────────────── */
+    #text-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 48px 80px;
+    }
+
+    #text-area::-webkit-scrollbar { width: 4px; }
+    #text-area::-webkit-scrollbar-track { background: transparent; }
+    #text-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    #page-text {
+      font-family: var(--font-body);
+      font-size: 19px;
+      line-height: 1.85;
+      color: var(--text);
+      max-width: 640px;
+      margin: 0 auto;
+      white-space: pre-wrap;
+    }
+
+    #page-text.empty {
+      font-family: var(--font-ui);
+      font-size: 13px;
+      color: var(--text-mute);
+      line-height: 1.6;
+    }
+
+    /* ── Controls ─────────────────────────────────────────── */
+    #controls {
+      border-top: 1px solid var(--border);
+      padding: 16px 40px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      background: var(--sidebar);
+    }
+
+    .ctrl-btn {
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      cursor: pointer;
+      font-size: 18px;
+      padding: 4px;
+      transition: color 0.15s;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+    }
+
+    .ctrl-btn:hover { color: var(--text); }
+    .ctrl-btn:disabled { color: var(--text-mute); cursor: default; }
+
+    #play-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 1px solid var(--gold-dim);
+      color: var(--gold);
+      font-size: 16px;
+      justify-content: center;
+      transition: all 0.15s;
+    }
+
+    #play-btn:hover:not(:disabled) {
+      background: var(--gold);
+      color: var(--bg);
+      border-color: var(--gold);
+    }
+
+    #play-btn.loading {
+      animation: pulse 1s ease-in-out infinite;
+      color: var(--gold-dim);
+      border-color: var(--gold-dim);
+      cursor: wait;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    .speed-select {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      font-family: var(--font-ui);
+      font-size: 11px;
+      padding: 4px 8px;
+      cursor: pointer;
+      margin-left: auto;
+      outline: none;
+    }
+
+    .speed-select:hover { border-color: var(--gold-dim); color: var(--text); }
+    .speed-select option { background: #1a1a1a; }
+
+    #status-msg {
+      font-size: 10px;
+      color: var(--text-mute);
+      letter-spacing: 0.06em;
+      margin-left: 8px;
+      min-width: 120px;
+    }
+
+    /* hidden native audio */
+    audio { display: none; }
+
+    /* ── Loading overlay ──────────────────────────────────── */
+    #loading-overlay {
+      position: fixed; inset: 0;
+      background: rgba(12,12,12,0.85);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      color: var(--text-dim);
+      letter-spacing: 0.1em;
+    }
+    #loading-overlay.show { display: flex; }
+  </style>
+</head>
+<body>
+
+<!-- ── Sidebar ── -->
+<aside id="sidebar">
+  <div id="sidebar-header">
+    <span>Noëtone</span>
+    Library
+  </div>
+
+  <div id="book-list">
+    <div id="no-books">Drop a file into<br>the inbox folder<br>to get started.</div>
+  </div>
+
+  <div id="sidebar-footer">
+    <div class="footer-label">API Usage (today)</div>
+    <div class="usage-row">
+      <span>OCR calls</span>
+      <span class="val" id="usage-ocr">—</span>
+    </div>
+    <div class="usage-row">
+      <span>TTS calls</span>
+      <span class="val" id="usage-tts">—</span>
+    </div>
+  </div>
+</aside>
+
+<!-- ── Main ── -->
+<main id="main">
+  <div id="topbar">
+    <div id="book-title" class="empty">No book selected</div>
+    <div id="page-counter"></div>
+  </div>
+
+  <div id="chapter-bar">
+    <span id="chapter-name"></span>
+    <button class="chapter-action" id="chapter-btn" onclick="toggleChapterInput()" title="Mark chapter start">+ chapter</button>
+    <input type="text" id="chapter-input" placeholder="Chapter title…" style="display:none"
+           onkeydown="handleChapterKey(event)">
+  </div>
+
+  <div id="text-area">
+    <div id="page-text" class="empty">Select a book from the sidebar.</div>
+  </div>
+
+  <div id="controls">
+    <button class="ctrl-btn" id="prev-btn" onclick="prevPage()" title="Previous page (←)" disabled>&#8592;</button>
+    <button class="ctrl-btn" id="play-btn" onclick="togglePlay()" title="Play / Pause (Space)" disabled>&#9654;</button>
+    <button class="ctrl-btn" id="next-btn" onclick="nextPage()" title="Next page (→)" disabled>&#8594;</button>
+    <span id="status-msg"></span>
+    <select class="speed-select" id="speed-select" onchange="setSpeed(this.value)">
+      <option value="0.5">0.5×</option>
+      <option value="0.75">0.75×</option>
+      <option value="1">1.0×</option>
+      <option value="1.25">1.25×</option>
+      <option value="1.5" selected>1.5×</option>
+      <option value="1.75">1.75×</option>
+      <option value="2">2.0×</option>
+      <option value="2.5">2.5×</option>
+    </select>
+  </div>
+</main>
+
+<audio id="audio-el"></audio>
+
+<div id="loading-overlay">Processing…</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────
+const S = {
+  books: [],
+  bookId: null,
+  bookTitle: '',
+  page: 1,
+  total: 1,
+  text: '',
+  audioReady: false,
+  loading: false,
+  prefetch: null,   // { page, text, audioUrl } — next page ready to play instantly
+};
+
+const audio = document.getElementById('audio-el');
+
+// ── Boot ───────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  loadBooks();
+  loadUsage();
+  setInterval(loadBooks, 8000);   // poll for new books from watcher
+  setInterval(loadUsage, 30000);
+
+  audio.addEventListener('ended', () => {
+    setStatus('');
+    if (S.page < S.total) {
+      setTimeout(() => nextPage(true), 800);  // small pause before advancing
+    }
+  });
+
+  audio.addEventListener('play',  () => { renderPlayBtn(true); prefetchNext(); });
+  audio.addEventListener('pause', () => renderPlayBtn(false));
+
+  document.addEventListener('keydown', handleKey);
+});
+
+// ── Books ──────────────────────────────────────────────────
+async function loadBooks() {
+  const books = await get('/books');
+  if (!books) return;
+  S.books = books;
+  renderBookList();
+}
+
+function renderBookList() {
+  const list = document.getElementById('book-list');
+  const noBooks = document.getElementById('no-books');
+
+  if (!S.books.length) {
+    noBooks.style.display = '';
+    return;
+  }
+  noBooks.style.display = 'none';
+
+  // rebuild without removing the noBooks div
+  [...list.querySelectorAll('.book-item')].forEach(el => el.remove());
+
+  S.books.forEach(b => {
+    const div = document.createElement('div');
+    div.className = 'book-item' + (b.id === S.bookId ? ' active' : '');
+    div.dataset.id = b.id;
+    div.innerHTML = `
+      <button class="delete-btn" onclick="deleteBook(event,'${b.id}')">×</button>
+      <div class="book-title">${esc(b.title)}</div>
+      <div class="book-meta">p.${b.current_page || 1} / ${b.total_pages}</div>
+    `;
+    div.addEventListener('click', () => openBook(b.id));
+    list.appendChild(div);
+  });
+}
+
+async function openBook(bookId) {
+  if (S.bookId === bookId) return;
+  stopAudio();
+  S.bookId = bookId;
+  const book = S.books.find(b => b.id === bookId);
+  S.bookTitle = book?.title || '';
+  S.total = book?.total_pages || 1;
+  const resumePage = book?.current_page || 1;
+  renderBookList();
+  await loadPage(resumePage);
+}
+
+async function deleteBook(e, bookId) {
+  e.stopPropagation();
+  if (!confirm('Remove this book?')) return;
+  await fetch(`/books/${bookId}`, { method: 'DELETE' });
+  if (S.bookId === bookId) { S.bookId = null; resetReader(); }
+  loadBooks();
+}
+
+// ── Pages ──────────────────────────────────────────────────
+async function loadPage(pageNum) {
+  if (!S.bookId) return;
+  stopAudio();
+  S.audioReady = false;
+
+  const data = await get(`/books/${S.bookId}/pages/${pageNum}`);
+  if (!data) { setStatus('Page not found'); return; }
+
+  S.page  = pageNum;
+  S.total = data.total_pages || S.total;
+  S.text  = data.raw_text || '';
+
+  // Save bookmark
+  post(`/books/${S.bookId}/bookmark`, { page: pageNum });
+
+  renderReader();
+  loadChapter();
+  loadUsage();
+}
+
+async function nextPage(autoplay = false) {
+  if (S.page >= S.total) return;
+  const nextNum = S.page + 1;
+
+  // Use prefetched data if it's for the right page — no wait
+  if (S.prefetch && S.prefetch.page === nextNum) {
+    stopAudio();
+    S.page = nextNum;
+    S.text = S.prefetch.text;
+    S.audioReady = true;
+    audio.src = S.prefetch.audioUrl;
+    audio.playbackRate = parseFloat(document.getElementById('speed-select').value);
+    S.prefetch = null;
+    post(`/books/${S.bookId}/bookmark`, { page: nextNum });
+    renderReader();
+    loadChapter();
+    if (autoplay) audio.play();
+  } else {
+    await loadPage(nextNum);
+    if (autoplay) togglePlay();
+  }
+}
+
+// Prefetch next page text + TTS in the background while current page plays
+async function prefetchNext() {
+  if (!S.bookId || S.page >= S.total) return;
+  const nextNum = S.page + 1;
+  if (S.prefetch && S.prefetch.page === nextNum) return;  // already fetching/fetched
+  S.prefetch = null;
+
+  try {
+    // 1. Fetch page text
+    const data = await get(`/books/${S.bookId}/pages/${nextNum}`);
+    if (!data || !data.raw_text) return;
+
+    // 2. Fetch TTS audio
+    const res = await fetch('/tts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: data.raw_text, voice: 'Kore', book_id: S.bookId, page: nextNum })
+    });
+    if (!res.ok) return;
+
+    const blob = await res.blob();
+    S.prefetch = { page: nextNum, text: data.raw_text, audioUrl: URL.createObjectURL(blob) };
+    console.log(`[prefetch] page ${nextNum} ready`);
+  } catch (e) {
+    console.warn('[prefetch] failed:', e);
+    S.prefetch = null;
+  }
+}
+
+async function prevPage() {
+  if (S.page <= 1) return;
+  await loadPage(S.page - 1);
+}
+
+// ── Audio ──────────────────────────────────────────────────
+async function togglePlay() {
+  if (!S.bookId || !S.text) return;
+
+  if (!audio.paused) {
+    audio.pause();
+    return;
+  }
+
+  if (S.audioReady) {
+    audio.playbackRate = parseFloat(document.getElementById('speed-select').value);
+    audio.play();
+    return;
+  }
+
+  // Fetch TTS
+  setPlayLoading(true);
+  setStatus('Generating audio…');
+
+  try {
+    const res = await fetch('/tts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: S.text, voice: 'Kore', book_id: S.bookId, page: S.page })
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      setStatus('TTS error: ' + (err.error || res.status));
+      setPlayLoading(false);
+      return;
+    }
+
+    const blob = await res.blob();
+    const url  = URL.createObjectURL(blob);
+    audio.src  = url;
+    audio.playbackRate = parseFloat(document.getElementById('speed-select').value);
+    S.audioReady = true;
+    setStatus('');
+    audio.play();
+
+  } catch (e) {
+    setStatus('Network error');
+    console.error(e);
+  } finally {
+    setPlayLoading(false);
+  }
+}
+
+function stopAudio() {
+  audio.pause();
+  audio.src = '';
+  S.audioReady = false;
+  renderPlayBtn(false);
+  setStatus('');
+}
+
+function setSpeed(val) {
+  audio.playbackRate = parseFloat(val);
+}
+
+// ── Chapters ───────────────────────────────────────────────
+async function loadChapter() {
+  const chapters = await get(`/books/${S.bookId}/chapters`);
+  if (!chapters) return;
+  // Find the latest chapter that starts on or before current page
+  const active = chapters.filter(c => c.start_page <= S.page).pop();
+  document.getElementById('chapter-name').textContent = active ? active.title : '';
+}
+
+function toggleChapterInput() {
+  const inp = document.getElementById('chapter-input');
+  inp.style.display = inp.style.display === 'none' ? '' : 'none';
+  if (inp.style.display !== 'none') inp.focus();
+}
+
+async function handleChapterKey(e) {
+  if (e.key === 'Enter') {
+    const title = e.target.value.trim();
+    if (title) {
+      await post(`/books/${S.bookId}/chapters`, { title, start_page: S.page });
+      e.target.value = '';
+      e.target.style.display = 'none';
+      loadChapter();
+    }
+  }
+  if (e.key === 'Escape') {
+    e.target.style.display = 'none';
+  }
+}
+
+// ── Usage ──────────────────────────────────────────────────
+async function loadUsage() {
+  const usage = await get('/api/usage');
+  if (!usage) return;
+  const ocrEl = document.getElementById('usage-ocr');
+  const ttsEl = document.getElementById('usage-tts');
+
+  // OCR: Gemini 2.5 Flash free tier = 500 RPD. Warn at 80% (400).
+  const ocrCount = usage['gemini_ocr'] || 0;
+  ocrEl.textContent = ocrCount;
+  ocrEl.className   = 'val' + (ocrCount > 400 ? ' warn' : '');
+
+  // TTS: both models combined = 20 RPD total. Warn at 80% (16).
+  const ttsCount = Object.entries(usage)
+    .filter(([k]) => k.includes('tts'))
+    .reduce((sum, [, v]) => sum + v, 0);
+  ttsEl.textContent = ttsCount;
+  ttsEl.className   = 'val' + (ttsCount > 16 ? ' warn' : '');
+}
+
+// ── Keyboard ───────────────────────────────────────────────
+function handleKey(e) {
+  if (e.target.tagName === 'INPUT') return;
+  if (e.key === ' ')          { e.preventDefault(); togglePlay(); }
+  if (e.key === 'ArrowRight') { e.preventDefault(); nextPage(); }
+  if (e.key === 'ArrowLeft')  { e.preventDefault(); prevPage(); }
+}
+
+// ── Render ─────────────────────────────────────────────────
+function renderReader() {
+  document.getElementById('book-title').textContent = S.bookTitle;
+  document.getElementById('book-title').classList.remove('empty');
+  document.getElementById('page-counter').textContent = `${S.page} / ${S.total}`;
+  document.getElementById('page-text').textContent = S.text;
+  document.getElementById('page-text').classList.remove('empty');
+  document.getElementById('prev-btn').disabled = S.page <= 1;
+  document.getElementById('next-btn').disabled = S.page >= S.total;
+  document.getElementById('play-btn').disabled = false;
+}
+
+function resetReader() {
+  document.getElementById('book-title').textContent = 'No book selected';
+  document.getElementById('book-title').classList.add('empty');
+  document.getElementById('page-counter').textContent = '';
+  document.getElementById('page-text').textContent = 'Select a book from the sidebar.';
+  document.getElementById('page-text').classList.add('empty');
+  document.getElementById('prev-btn').disabled = true;
+  document.getElementById('next-btn').disabled = true;
+  document.getElementById('play-btn').disabled = true;
+  document.getElementById('chapter-name').textContent = '';
+}
+
+function renderPlayBtn(playing) {
+  const btn = document.getElementById('play-btn');
+  btn.innerHTML = playing ? '&#9646;&#9646;' : '&#9654;';
+  btn.classList.remove('loading');
+}
+
+function setPlayLoading(on) {
+  const btn = document.getElementById('play-btn');
+  btn.classList.toggle('loading', on);
+  if (on) btn.innerHTML = '…';
+}
+
+function setStatus(msg) {
+  document.getElementById('status-msg').textContent = msg;
+}
+
+// ── Helpers ────────────────────────────────────────────────
+async function get(url) {
+  try {
+    const r = await fetch(url);
+    return r.ok ? r.json() : null;
+  } catch { return null; }
+}
+
+async function post(url, body) {
+  return fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+}
+
+function esc(str) {
+  return str.replace(/[&<>"']/g, c =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+</script>
+</body>
+</html>

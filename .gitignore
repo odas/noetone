@@ -1,0 +1,11 @@
+.env
+.venv/
+audio/
+inbox/
+notes/
+reader.db
+reader.db-wal
+reader.db-shm
+reader.log
+__pycache__/
+*.pyc
