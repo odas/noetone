@@ -1,4 +1,4 @@
-# TTS Books — Python dependencies
+# Noëtone Reader — Python dependencies
 # Python 3.11+ required (zoneinfo stdlib, match statements)
 # System dependencies (install separately):
 #   macOS:  brew install tesseract poppler

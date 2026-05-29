@@ -139,7 +139,6 @@ A small Flask app with a clean separation of concerns:
 Built by **Orpita Das** — ex-Snowflake data engineer, in Pune, India. Code implementation done in collaboration with Claude; documentation and product brainstorming with Claude and Gemini.
 
 - Feedback, ideas, or a bug? Open an issue or reach out.
-- Like it? You can [buy me a coffee](https://ko-fi.com/) ☕
 - Open to freelance and contract data work — [LinkedIn](https://linkedin.com/in/orpitadas)
 
 *The name blends "noëtic" (of the mind/intellect) and "tone" (sound).*
